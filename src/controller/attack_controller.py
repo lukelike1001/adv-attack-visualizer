@@ -8,6 +8,10 @@ class AttackNotRunError(Exception):
     """Raised when step access is attempted before any attack has been run."""
 
 
+class StepNavigationError(Exception):
+    """Raised when navigation moves beyond the bounds of the step trajectory."""
+
+
 class AttackController:
     """
     Coordinates attack execution and manages the resulting step trajectory.
@@ -57,6 +61,54 @@ class AttackController:
                 "No attack has been run. Call run_attack() before accessing steps."
             )
         return self._steps[self._current_index]
+
+    def next_step(self) -> None:
+        """
+        Advance to the next step in the trajectory.
+
+        Raises:
+            AttackNotRunError: If no attack has been run yet.
+            StepNavigationError: If already at the last step.
+        """
+        if not self._steps:
+            raise AttackNotRunError(
+                "No attack has been run. Call run_attack() before navigating steps."
+            )
+        if not self.has_next():
+            raise StepNavigationError(
+                f"Already at the last step (index {self._current_index})."
+            )
+        self._current_index += 1
+
+    def previous_step(self) -> None:
+        """
+        Return to the previous step in the trajectory.
+
+        Raises:
+            AttackNotRunError: If no attack has been run yet.
+            StepNavigationError: If already at the first step.
+        """
+        if not self._steps:
+            raise AttackNotRunError(
+                "No attack has been run. Call run_attack() before navigating steps."
+            )
+        if not self.has_previous():
+            raise StepNavigationError(
+                f"Already at the first step (index {self._current_index})."
+            )
+        self._current_index -= 1
+
+    def has_next(self) -> bool:
+        """
+        Return True if there is a step after the current one.
+        """
+        return self._current_index < len(self._steps) - 1
+
+    def has_previous(self) -> bool:
+        """
+        Return True if there is a step before the current one.
+        """
+        return self._current_index > 0
 
     def get_total_steps(self) -> int:
         """
