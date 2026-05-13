@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from attacks.attack_step import AttackStep
+from attacks.constraints.base_constraint import PerturbationConstraint
 
 
 class AdversarialAttack(ABC):
@@ -15,22 +16,31 @@ class AdversarialAttack(ABC):
     This class is part of the Model layer and must not depend on any GUI logic.
     """
 
-    def __init__(self, model: Any, config: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        model: Any,
+        config: Dict[str, Any],
+        constraint: PerturbationConstraint,
+    ) -> None:
         """
         Initialize the attack.
 
         Args:
             model: The model being attacked.
             config: Configuration parameters for the attack.
+            constraint: Perturbation constraint that handles gradient
+                        transformation and projection.
         """
         self._model = model
         self._config = config
+        self._constraint = constraint
+        self._step_size: float = config.get("step_size", constraint.get_epsilon())
 
     @abstractmethod
     def generate(
         self,
         input_image: Any,
-        target: Optional[Any] = None
+        target: Optional[Any] = None,
     ) -> List[AttackStep]:
         """
         Run the adversarial attack.
@@ -66,11 +76,10 @@ class AdversarialAttack(ABC):
             input_image: The original input image.
 
         Returns:
-            Initial state for the attack.
+            Initial state for the attack, defaulting to the input unchanged.
         """
         return input_image
 
-    @abstractmethod
     def _step(
         self,
         current_image: Any,
@@ -91,7 +100,22 @@ class AdversarialAttack(ABC):
             AttackStep capturing the perturbed image, gradient, noise, and
             metadata produced by this step.
         """
-        pass
+        gradient = self._compute_gradient(current_image, target)
+        perturbed_image = self._constraint.apply_update(
+            current_image, gradient, original_image, self._step_size
+        )
+        noise = perturbed_image - original_image
+        metadata = {
+            "epsilon": self._constraint.get_epsilon(),
+            "step_size": self._step_size,
+        }
+        return AttackStep(
+            step_index=step_index,
+            perturbed_image=perturbed_image,
+            gradient=gradient,
+            noise=noise,
+            metadata=metadata,
+        )
 
     def get_config(self) -> Dict[str, Any]:
         """
