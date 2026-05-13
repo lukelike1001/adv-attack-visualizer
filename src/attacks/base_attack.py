@@ -71,16 +71,25 @@ class AdversarialAttack(ABC):
         return input_image
 
     @abstractmethod
-    def _step(self, current_image: Any, target: Optional[Any]) -> Any:
+    def _step(
+        self,
+        current_image: Any,
+        original_image: Any,
+        target: Optional[Any],
+        step_index: int,
+    ) -> AttackStep:
         """
-        Perform a single attack step.
+        Perform a single attack step and return its full state.
 
         Args:
-            current_image: The current perturbed image.
+            current_image: The image at the start of this step.
+            original_image: The original, unperturbed input image.
             target: Optional target label.
+            step_index: Zero-based index of this step in the trajectory.
 
         Returns:
-            Updated image after one attack step.
+            AttackStep capturing the perturbed image, gradient, noise, and
+            metadata produced by this step.
         """
         pass
 

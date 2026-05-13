@@ -53,24 +53,9 @@ class FGSMAttack(AdversarialAttack):
             A one-element list containing the AttackStep produced.
         """
         current_image = self._initialize(input_image)
-        gradient = self._compute_gradient(current_image, target)
-        perturbed_image = self._constraint.apply_update(
-            current_image, gradient, input_image, self._step_size
-        )
-        noise = perturbed_image - input_image
-        metadata = {
-            "epsilon": self._constraint.get_epsilon(),
-            "step_size": self._step_size,
-        }
-        return [AttackStep(
-            step_index=0,
-            perturbed_image=perturbed_image,
-            gradient=gradient,
-            noise=noise,
-            metadata=metadata,
-        )]
+        return [self._step(current_image, input_image, target, 0)]
 
-    def _compute_gradient(self, image: Any, target: Optional[Any]) -> Any:
+    def _compute_gradient(self, _image: Any, _target: Optional[Any]) -> Any:
         """
         Compute the gradient of the loss with respect to the input image.
 
@@ -85,18 +70,38 @@ class FGSMAttack(AdversarialAttack):
             "Gradient computation requires a concrete tensor library implementation."
         )
 
-    def _step(self, current_image: Any, target: Optional[Any]) -> Any:
+    def _step(
+        self,
+        current_image: Any,
+        original_image: Any,
+        target: Optional[Any],
+        step_index: int,
+    ) -> AttackStep:
         """
         Perform a single constrained gradient step.
 
         Args:
-            current_image: The image to update.
+            current_image: The image at the start of this step.
+            original_image: The original, unperturbed input image.
             target: Optional target label.
+            step_index: Zero-based index of this step in the trajectory.
 
         Returns:
-            Updated image after one constrained gradient step.
+            AttackStep capturing the result of this step.
         """
         gradient = self._compute_gradient(current_image, target)
-        return self._constraint.apply_update(
-            current_image, gradient, current_image, self._step_size
+        perturbed_image = self._constraint.apply_update(
+            current_image, gradient, original_image, self._step_size
+        )
+        noise = perturbed_image - original_image
+        metadata = {
+            "epsilon": self._constraint.get_epsilon(),
+            "step_size": self._step_size,
+        }
+        return AttackStep(
+            step_index=step_index,
+            perturbed_image=perturbed_image,
+            gradient=gradient,
+            noise=noise,
+            metadata=metadata,
         )
