@@ -7,3 +7,10 @@ panels:
   math: "Math Panel"
   image: "Image Panel"
   controls: "Controls Panel"
+
+image_panel:
+  placeholder_text: "No image loaded"
+  mode_labels:
+    original: "Original Image"
+    noise: "Noise Map"
+    perturbed: "Perturbed Image"
