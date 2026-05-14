@@ -1,0 +1,9 @@
+window:
+  title: "Adversarial Attack Visualizer"
+  width: 1200
+  height: 700
+
+panels:
+  math: "Math Panel"
+  image: "Image Panel"
+  controls: "Controls Panel"
