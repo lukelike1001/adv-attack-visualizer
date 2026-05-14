@@ -1,10 +1,9 @@
-from pathlib import Path
-
 import pytest
 
 from utils.config_loader import AttackConfigNotFoundError, get_attack_config, load_config
+from utils.paths import CONFIG_DIR
 
-CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "attack_config.yaml"
+CONFIG_PATH = CONFIG_DIR / "attack_config.yaml"
 
 
 class TestLoadConfig:
